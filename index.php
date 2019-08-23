@@ -1,12 +1,17 @@
-
-
 <?php
 
-/*    Note to future self:
+/*
+    <Note to future self>
 
-      Have homepage as the most viewed videos on youtube of past 24 hrs
-      Just require channel search -> bring to most viewed all time as default
+    Create "next page" to view the next videos
 
+    Instead of embedding all videos on a page, create playlist and embed it
+      - might require user permission?
+      - still have as option?
+
+    Don't embed all, display one at a time with a next video button?
+
+    </End of note>
 */
 
 // Require the google/apiclient library
@@ -18,27 +23,30 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 // Create form to search for channel by name and input search criteria
 $htmlBody = <<<END
-<form method="GET">
-  <div>
-    <input type="search" id="q" name="q" placeholder="Enter Channel Name">
-    <br><br>
-    <input type="radio" name="order" value="viewCount" checked> Most Viewed<br>
-    <input type="radio" name="order" value="rating"> Top Rated<br>
-    <br>
-    <select name="timespan">
-      <option value="day">Past 24 hours</option>
-      <option value="week">Past week</option>
-      <option value="month1">Past month</option>
-      <option value="month3">Past 3 months</option>
-      <option value="month6">Past 6 months</option>
-      <option value="year">Past year</option>
-      <option value="alltime">All time</option>
-    </select>
-    <br>
-    <br>
-  </div>
-  <input type="submit" value="Search">
-</form>
+<div class="container">
+  <form id="form" class="form" method="GET">
+    <div class="form-group">
+      <h3> Search </h3>
+      <input type="text" id="q" class="form-q" name="q" placeholder="Enter channel name" />
+      <label for="order">Show me</label>
+      <select class="form-select" name="order">
+        <option value="viewcount">Most Viewed</option>
+        <option value="rating">Top Rated</option>
+      </select>
+      <label for="timespan">From</label>
+      <select class="form-select" name="timespan">
+        <option value="day">Past 24 hours</option>
+        <option value="week">Past week</option>
+        <option value="month1">Past month</option>
+        <option value="month3">Past 3 months</option>
+        <option value="month6">Past 6 months</option>
+        <option value="year">Past year</option>
+        <option value="alltime">All time</option>
+      </select>
+      <input type="submit" id="submit" class="submit" value="Watch now" />
+    </div>
+  </form>
+</div>
 END;
 
 // Executes after submission of search form, produces new results page
@@ -55,7 +63,7 @@ if (isset($_GET['q']) && isset($_GET['order']) && isset($_GET['timespan'])) {
 
   switch($_GET['timespan']) {
     case 'day':
-      $date->sub(new DateInterval('P24H'));
+      $date->sub(new DateInterval('P1D'));
       break;
     case 'week':
       $date->sub(new DateInterval('P7D'));
@@ -106,16 +114,6 @@ if (isset($_GET['q']) && isset($_GET['order']) && isset($_GET['timespan'])) {
       'order' => $order,
     ));
 
-    /*  Note to future self:
-
-        Instead of embedding all videos on a page, create playlist and embed it
-          - might require user permission?
-          - still have as option?
-
-        Don't embed all, display one at a time with a next video button?
-
-    */
-
     // Embeded them on page
     foreach ($searchResponse['items'] as $searchResult) {
         $videoID = $searchResult['id']['videoId'];
@@ -136,12 +134,28 @@ if (isset($_GET['q']) && isset($_GET['order']) && isset($_GET['timespan'])) {
 }
 ?>
 
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
+
   <head>
-    <title>YouTube Sort</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>YTsort</title>
+    <link rel="stylesheet" href="css/style.css">
   </head>
+
   <body>
-    <?=$htmlBody?>
+    <div class="main">
+
+      <div class="header">
+        <a href="index.php">
+          <img src="images/logo.png" alt="YTsort">
+        </a>
+      </div>
+
+      <?=$htmlBody?>
+
   </body>
+
 </html>
