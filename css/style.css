@@ -3,33 +3,45 @@ html {
   font-family: 'Arial Black', 'Arial Bold', Gadget, sans-serif;
 }
 
+h3 {
+  font-size: 18pt;
+  padding: 35px 70px 0;
+}
+
+iframe {
+  width: 700px;
+  height: 420px;
+  border: 0;
+}
+
 .main {
   overflow-x: hidden;
 }
 
-.header {
-  /* text-align: center; */
+.container {
+  background: rgba(11, 13, 24, 0.6);
+  border-radius: 20px;
+  color: #ffff;
 }
 
-.container {
+#search {
   width: 60%;
-  background: rgba(11, 13, 24, 0.6);
-  margin: 175px auto;
-  border-radius: 20px;
+  margin: 200px auto;
+}
+
+#display {
+  width: 70%;
+  margin: 50px auto;
+  height: 550px;
 }
 
 .form {
-  padding: 35px 70px 50px 70px;
+  padding: 0px 70px 50px 70px;
   display: flex;
-  color: #ffff;
   flex-flow: row wrap;
   flex-direction: row;
   align-items: center;
   overflow: hidden;
-}
-
-.form h3 {
-    font-size: 18pt;
 }
 
 .form label {
@@ -61,6 +73,29 @@ html {
 
 .submit:hover {
     background-color: #c54242;
+}
+
+.videoLayout {
+  padding: 0px 70px 50px 70px;
+  display: flex;
+}
+
+.videoList {
+  margin-left: 30px;
+  text-align: left;
+  display: block;
+  overflow-y: auto;
+  height: 420px;
+  width: 420px;
+}
+
+.videoList td {
+  border-top: 1px solid white;
+  padding: 10px;
+}
+
+.videoList tr:hover {
+  background-color: rgba(11, 13, 24, 0.7);
 }
 
 @media screen and (max-width: 768px) {

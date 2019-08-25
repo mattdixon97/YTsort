@@ -3,13 +3,15 @@
 /*
     <Note to future self>
 
-    Create "next page" to view the next videos
+    TODO:
 
-    Instead of embedding all videos on a page, create playlist and embed it
-      - might require user permission?
-      - still have as option?
+      - Create "next page" to view the next set of videos
 
-    Don't embed all, display one at a time with a next video button?
+      - Create option to export as playlist
+
+      - add thumbnails to video list table
+
+      - specify over table what search criteria was
 
     </End of note>
 */
@@ -23,10 +25,10 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 // Create form to search for channel by name and input search criteria
 $htmlBody = <<<END
-<div class="container">
+<div class="container" id="search">
+  <h3> Search </h3>
   <form id="form" class="form" method="GET">
     <div class="form-group">
-      <h3> Search </h3>
       <input type="text" id="q" class="form-q" name="q" placeholder="Enter channel name" />
       <label for="order">Show me</label>
       <select class="form-select" name="order">
@@ -51,7 +53,11 @@ END;
 
 // Executes after submission of search form, produces new results page
 if (isset($_GET['q']) && isset($_GET['order']) && isset($_GET['timespan'])) {
-  $DEVELOPER_KEY = 'AIzaSyBJ-4yJkvv1QKp3dnFBVoNWuXgquOMBrII';                   // REPLACE ME
+  //$DEVELOPER_KEY = 'AIzaSyBJ-4yJkvv1QKp3dnFBVoNWuXgquOMBrII';                   // REPLACE ME
+  //$DEVELOPER_KEY = 'AIzaSyBr80fv3Uomgl12aUH2gItDDpH_3_fxGxY';
+  $DEVELOPER_KEY = 'AIzaSyBhs-yuWw3xefqoQ3bkglzEh1G0YNu8B-U';
+
+
   $client = new Google_Client();
   $client->setDeveloperKey($DEVELOPER_KEY);
   $youtube = new Google_Service_YouTube($client);
@@ -87,26 +93,25 @@ if (isset($_GET['q']) && isset($_GET['order']) && isset($_GET['timespan'])) {
   $dateStr = $date->format(DateTime::ATOM);
 
   try {
+
     // Retrieve info for channel matching search query
-    $searchResponse = $youtube->search->listSearch('id,snippet', array(
+    $channelSearch = $youtube->search->listSearch('id,snippet', array(
       'q' => $_GET['q'],
       'maxResults' => 1,
       'type' => 'channel',
     ));
 
     // If no channel found (searchResponse returns empty)
-    if (!$searchResponse['items']) {
+    if (!$channelSearch['items']) {
       throw new Exception('Sorry, channel cannot be found :(');
     }
 
-    $channelName = $searchResponse['items'][0]['snippet']['channelTitle'];
-    $channelID = $searchResponse['items'][0]['snippet']['channelId'];
+    $channelName = $channelSearch['items'][0]['snippet']['channelTitle'];
+    $channelID = $channelSearch['items'][0]['snippet']['channelId'];
 
-    $htmlBody .= "<h3>$channelName</h3>";
-
-    // Retrieve all videos from channel matching the date parameters
-    // Sort them by chosen order
-    $searchResponse = $youtube->search->listSearch('id,snippet', array(
+    // Retrieve videos from channel matching the date parameters and sort
+    // Only returns 25 videos at a time
+    $videoSearch = $youtube->search->listSearch('id,snippet', array(
       'channelId' => $channelID,
       'maxResults' => 25,
       'type' => 'video',
@@ -114,12 +119,38 @@ if (isset($_GET['q']) && isset($_GET['order']) && isset($_GET['timespan'])) {
       'order' => $order,
     ));
 
-    // Embeded them on page
-    foreach ($searchResponse['items'] as $searchResult) {
-        $videoID = $searchResult['id']['videoId'];
-        $htmlBody .= '<iframe width="500" height="300" src="https://www.youtube.com/embed/'
-                      . $videoID . '" frameborder="0" allowfullscreen> </iframe><br><br>';
+    if (!$videoSearch['items']) {
+      throw new Exception('Sorry, no videos available :(');
     }
+
+    // Create layout to display results and embed the first video
+    $htmlBody = '
+                <div class="container" id="display">
+                  <h3>'.$channelName.'</h3>
+                  <div class="videoLayout">
+                    <div id="video">
+                      <iframe src="https://www.youtube.com/embed/'
+                        . $videoSearch['items'][0]['id']['videoId']
+                        . '" allowfullscreen>
+                      </iframe>
+                    </div>
+                    <table class="videoList">
+                ';
+
+    // Put all video results (up to 25) in a table
+    // Change embeded video on page when table element is clicked
+    $i = 1;
+    foreach ($videoSearch['items'] as $searchResult) {
+        $htmlBody .= '<tr onclick="document.getElementById(\'video\').innerHTML=
+                      \'<iframe src=&quot;https://www.youtube.com/embed/'
+                      . $searchResult['id']['videoId']. '&quot; allowfullscreen></iframe>\';">
+                      <td>'.$i.'</td><td>'.$searchResult['snippet']['title'].'</td></tr>';
+        $i++;
+    }
+
+    $htmlBody .= '    </table>
+                    </div>
+                  </div>';
 
   // Catch exceptions
   } catch (Google_Service_Exception $e) {
@@ -129,7 +160,7 @@ if (isset($_GET['q']) && isset($_GET['order']) && isset($_GET['timespan'])) {
     $htmlBody .= sprintf('<p>A client error occurred: <code>%s</code></p>',
       htmlspecialchars($e->getMessage()));
   } catch (Exception $e) {
-      echo $e->getMessage(), "\n";
+      $htmlBody .= '<p>'. $e->getMessage() .'</p>';
   }
 }
 ?>
