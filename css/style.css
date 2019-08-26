@@ -1,6 +1,6 @@
 html {
   background-color: #efefef;
-  font-family: 'Arial Black', 'Arial Bold', Gadget, sans-serif;
+  font-family: 'Arial Black', 'Arial Bold', 'Arial Black', sans-serif;
 }
 
 h3 {
@@ -32,7 +32,7 @@ iframe {
 #display {
   width: 70%;
   margin: 50px auto;
-  height: 550px;
+  height: 600px;
 }
 
 .form {
@@ -87,6 +87,12 @@ iframe {
   overflow-y: auto;
   height: 420px;
   width: 420px;
+}
+
+.videoList caption {
+  font-size: 14pt;
+  padding-bottom: 15px;
+  font-weight: bold;
 }
 
 .videoList td {

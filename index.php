@@ -5,13 +5,10 @@
 
     TODO:
 
-      - Create "next page" to view the next set of videos
-
+      - Finish next page stuff
+      - Add previos page feature
+      - Improve "no videos available" / "channel not found"
       - Create option to export as playlist
-
-      - add thumbnails to video list table
-
-      - specify over table what search criteria was
 
     </End of note>
 */
@@ -37,13 +34,13 @@ $htmlBody = <<<END
       </select>
       <label for="timespan">From</label>
       <select class="form-select" name="timespan">
-        <option value="day">Past 24 hours</option>
-        <option value="week">Past week</option>
-        <option value="month1">Past month</option>
-        <option value="month3">Past 3 months</option>
-        <option value="month6">Past 6 months</option>
-        <option value="year">Past year</option>
-        <option value="alltime">All time</option>
+        <option value="past 24 hours">Past 24 hours</option>
+        <option value="past week">Past week</option>
+        <option value="past month">Past month</option>
+        <option value="past 3 months">Past 3 months</option>
+        <option value="past 6 months">Past 6 months</option>
+        <option value="past year">Past year</option>
+        <option value="all time">All time</option>
       </select>
       <input type="submit" id="submit" class="submit" value="Watch now" />
     </div>
@@ -53,10 +50,9 @@ END;
 
 // Executes after submission of search form, produces new results page
 if (isset($_GET['q']) && isset($_GET['order']) && isset($_GET['timespan'])) {
-  //$DEVELOPER_KEY = 'AIzaSyBJ-4yJkvv1QKp3dnFBVoNWuXgquOMBrII';                   // REPLACE ME
+  $DEVELOPER_KEY = 'AIzaSyBJ-4yJkvv1QKp3dnFBVoNWuXgquOMBrII';                   // REPLACE ME
   //$DEVELOPER_KEY = 'AIzaSyBr80fv3Uomgl12aUH2gItDDpH_3_fxGxY';
-  $DEVELOPER_KEY = 'AIzaSyBhs-yuWw3xefqoQ3bkglzEh1G0YNu8B-U';
-
+  //$DEVELOPER_KEY = 'AIzaSyBhs-yuWw3xefqoQ3bkglzEh1G0YNu8B-U';
 
   $client = new Google_Client();
   $client->setDeveloperKey($DEVELOPER_KEY);
@@ -64,26 +60,48 @@ if (isset($_GET['q']) && isset($_GET['order']) && isset($_GET['timespan'])) {
 
   $htmlBody = '';
 
+  $q = $_GET['q'];
   $order = $_GET['order'];
-  $date = new DateTime;
+  $timespan = $_GET['timespan'];
 
-  switch($_GET['timespan']) {
-    case 'day':
+  if (isset($_GET['page'])) {
+    $page = $_GET['page'];
+  } else {
+    $page = 0;
+  }
+
+  if (isset($_GET['pageToken'])) {
+    $pageToken = $_GET['pageToken'];
+  } else {
+    $pageToken = "";
+  }
+
+  switch($order) {
+    case 'viewcount':
+      $orderStr = "Most viewed";
+      break;
+    case 'rating':
+      $orderStr = "Top rated";
+  }
+
+  $date = new DateTime;
+  switch($timespan) {
+    case 'past 24 hours':
       $date->sub(new DateInterval('P1D'));
       break;
-    case 'week':
+    case 'past week':
       $date->sub(new DateInterval('P7D'));
       break;
-    case 'month1':
+    case 'past month':
       $date->sub(new DateInterval('P1M'));
       break;
-    case 'month3':
+    case 'past 3 months':
       $date->sub(new DateInterval('P3M'));
       break;
-    case 'month6':
+    case 'past 6 months':
       $date->sub(new DateInterval('P6M'));
       break;
-    case 'year':
+    case 'past year':
       $date->sub(new DateInterval('P1Y'));
       break;
     default:
@@ -96,14 +114,14 @@ if (isset($_GET['q']) && isset($_GET['order']) && isset($_GET['timespan'])) {
 
     // Retrieve info for channel matching search query
     $channelSearch = $youtube->search->listSearch('id,snippet', array(
-      'q' => $_GET['q'],
+      'q' => $q,
       'maxResults' => 1,
       'type' => 'channel',
     ));
 
     // If no channel found (searchResponse returns empty)
     if (!$channelSearch['items']) {
-      throw new Exception('Sorry, channel cannot be found :(');
+      throw new Exception('Sorry, channel cannot be found');
     }
 
     $channelName = $channelSearch['items'][0]['snippet']['channelTitle'];
@@ -117,10 +135,12 @@ if (isset($_GET['q']) && isset($_GET['order']) && isset($_GET['timespan'])) {
       'type' => 'video',
       'publishedAfter' => $dateStr,
       'order' => $order,
+      'pageToken' => $pageToken,
     ));
 
+    // If no videos found (videoSearch returns empty)
     if (!$videoSearch['items']) {
-      throw new Exception('Sorry, no videos available :(');
+      throw new Exception('Sorry, no videos available');
     }
 
     // Create layout to display results and embed the first video
@@ -135,6 +155,7 @@ if (isset($_GET['q']) && isset($_GET['order']) && isset($_GET['timespan'])) {
                       </iframe>
                     </div>
                     <table class="videoList">
+                       <caption>'.$orderStr.' from past '.$timespan.'</caption>
                 ';
 
     // Put all video results (up to 25) in a table
@@ -144,13 +165,24 @@ if (isset($_GET['q']) && isset($_GET['order']) && isset($_GET['timespan'])) {
         $htmlBody .= '<tr onclick="document.getElementById(\'video\').innerHTML=
                       \'<iframe src=&quot;https://www.youtube.com/embed/'
                       . $searchResult['id']['videoId']. '&quot; allowfullscreen></iframe>\';">
-                      <td>'.$i.'</td><td>'.$searchResult['snippet']['title'].'</td></tr>';
+                      <td>'.($i + (25 * $page)).'</td><td>'.$searchResult['snippet']['title'].'</td>
+                      </tr>';
         $i++;
     }
 
-    $htmlBody .= '    </table>
-                    </div>
-                  </div>';
+    // If there is another page of results, add link to display next page
+    if (isset($videoSearch['nextPageToken'])) {
+      $htmlBody .= '    </table>
+                      </div>
+                      <a class="next" href="index.php?q='.$q.'&order='.$order.
+                      '&timespan='.$timespan.'&pageToken='.$videoSearch['nextPageToken']
+                      .'&page='.++$page.'"> Next page </a>
+                    </div>';
+    } else {
+      $htmlBody .= '    </table>
+                      </div>
+                    </div>';
+    }
 
   // Catch exceptions
   } catch (Google_Service_Exception $e) {
@@ -163,6 +195,7 @@ if (isset($_GET['q']) && isset($_GET['order']) && isset($_GET['timespan'])) {
       $htmlBody .= '<p>'. $e->getMessage() .'</p>';
   }
 }
+
 ?>
 
 <!DOCTYPE html>
