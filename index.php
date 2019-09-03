@@ -1,20 +1,5 @@
 <?php
 
-/*
-    <Note to future self>
-
-    TODO:
-
-      - Finish next page stuff
-      - Add previos page feature
-      - Improve "no videos available" / "channel not found"
-      - Create option to export as playlist
-
-    </End of note>
-*/
-
-// Require the google/apiclient library
-//    $ composer require google/apiclient:~2.0
 if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
   throw new \Exception('please run "composer require google/apiclient:~2.0" in "' . __DIR__ .'"');
 }
@@ -50,9 +35,7 @@ END;
 
 // Executes after submission of search form, produces new results page
 if (isset($_GET['q']) && isset($_GET['order']) && isset($_GET['timespan'])) {
-  $DEVELOPER_KEY = 'AIzaSyBJ-4yJkvv1QKp3dnFBVoNWuXgquOMBrII';                   // REPLACE ME
-  //$DEVELOPER_KEY = 'AIzaSyBr80fv3Uomgl12aUH2gItDDpH_3_fxGxY';
-  //$DEVELOPER_KEY = 'AIzaSyBhs-yuWw3xefqoQ3bkglzEh1G0YNu8B-U';
+  $DEVELOPER_KEY = 'REPLACE ME';
 
   $client = new Google_Client();
   $client->setDeveloperKey($DEVELOPER_KEY);
@@ -82,6 +65,7 @@ if (isset($_GET['q']) && isset($_GET['order']) && isset($_GET['timespan'])) {
       break;
     case 'rating':
       $orderStr = "Top rated";
+      break;
   }
 
   $date = new DateTime;
@@ -121,7 +105,7 @@ if (isset($_GET['q']) && isset($_GET['order']) && isset($_GET['timespan'])) {
 
     // If no channel found (searchResponse returns empty)
     if (!$channelSearch['items']) {
-      throw new Exception('Sorry, channel cannot be found');
+      throw new Exception('Sorry, channel cannot be found :(');
     }
 
     $channelName = $channelSearch['items'][0]['snippet']['channelTitle'];
@@ -140,7 +124,7 @@ if (isset($_GET['q']) && isset($_GET['order']) && isset($_GET['timespan'])) {
 
     // If no videos found (videoSearch returns empty)
     if (!$videoSearch['items']) {
-      throw new Exception('Sorry, no videos available');
+      throw new Exception('Sorry, no videos available :(');
     }
 
     // Create layout to display results and embed the first video
@@ -154,8 +138,9 @@ if (isset($_GET['q']) && isset($_GET['order']) && isset($_GET['timespan'])) {
                         . '" allowfullscreen>
                       </iframe>
                     </div>
-                    <table class="videoList">
-                       <caption>'.$orderStr.' from past '.$timespan.'</caption>
+                    <div>
+                      <table class="videoList">
+                        <caption>'.$orderStr.' from '.$timespan.'</caption>
                 ';
 
     // Put all video results (up to 25) in a table
@@ -170,19 +155,28 @@ if (isset($_GET['q']) && isset($_GET['order']) && isset($_GET['timespan'])) {
         $i++;
     }
 
-    // If there is another page of results, add link to display next page
-    if (isset($videoSearch['nextPageToken'])) {
-      $htmlBody .= '    </table>
-                      </div>
-                      <a class="next" href="index.php?q='.$q.'&order='.$order.
-                      '&timespan='.$timespan.'&pageToken='.$videoSearch['nextPageToken']
-                      .'&page='.++$page.'"> Next page </a>
-                    </div>';
-    } else {
-      $htmlBody .= '    </table>
-                      </div>
-                    </div>';
+    $htmlBody .= '    </table>
+                    </div>
+                  </div>
+                  <div class="pageSelect">';
+
+    // If there are >25 results, add links for next page/prev page when appropriate
+    if (isset($videoSearch['prevPageToken'])) {
+      $nextPage = $page - 1;
+      $htmlBody .= '  <a class="next" href="index.php?q='.$q.'&order='.$order.
+                        '&timespan='.$timespan.'&pageToken='.$videoSearch['prevPageToken']
+                        .'&page='.($nextPage).'"> &#171; Back </a>';
     }
+
+    if (isset($videoSearch['nextPageToken'])) {
+      $prevPage = $page + 1;
+      $htmlBody .= '  <a class="next" href="index.php?q='.$q.'&order='.$order.
+                        '&timespan='.$timespan.'&pageToken='.$videoSearch['nextPageToken']
+                        .'&page='.($prevPage).'"> More &#187; </a>';
+    }
+
+    $htmlBody .= '  </div>
+                  </div>';
 
   // Catch exceptions
   } catch (Google_Service_Exception $e) {
@@ -192,7 +186,13 @@ if (isset($_GET['q']) && isset($_GET['order']) && isset($_GET['timespan'])) {
     $htmlBody .= sprintf('<p>A client error occurred: <code>%s</code></p>',
       htmlspecialchars($e->getMessage()));
   } catch (Exception $e) {
-      $htmlBody .= '<p>'. $e->getMessage() .'</p>';
+      $htmlBody .= '<div class="error">
+                      <h2>'. $e->getMessage() .'</h2>
+                      <iframe width="560" height="315"
+                        src="https://www.youtube.com/embed/nFAK8Vj62WM"
+                        allowfullscreen>
+                      </iframe>
+                    </div>';
   }
 }
 

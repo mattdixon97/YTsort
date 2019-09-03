@@ -18,6 +18,10 @@ iframe {
   overflow-x: hidden;
 }
 
+.error {
+  text-align: center;
+}
+
 .container {
   background: rgba(11, 13, 24, 0.6);
   border-radius: 20px;
@@ -26,7 +30,7 @@ iframe {
 
 #search {
   width: 60%;
-  margin: 200px auto;
+  margin: 12% auto;
 }
 
 #display {
@@ -81,7 +85,7 @@ iframe {
 }
 
 .videoList {
-  margin-left: 30px;
+  margin-left: 10%;
   text-align: left;
   display: block;
   overflow-y: auto;
@@ -104,7 +108,25 @@ iframe {
   background-color: rgba(11, 13, 24, 0.7);
 }
 
+.pageSelect {
+  float: right;
+  padding-bottom: 15px;
+  margin-right: 5%;
+}
+
+.pageSelect a {
+  color: #ffffff;
+  font-weight: bold;
+  text-decoration: none;
+  padding: 0 20px;
+}
+
+.pageSelect a:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
 @media screen and (max-width: 768px) {
+
   .container {
     width: calc( 100% - 30px);
     max-width: 100%;
@@ -119,10 +141,34 @@ iframe {
     width: 100%;
     margin-bottom: 20px;
   }
-}
 
-@media screen and (max-width: 480px) {
-  .form {
-    padding: 35px 30px 51px 30px;
+  #display {
+    margin: 50px auto;
+    height: 950px;
   }
+
+  .videoLayout {
+    padding: 0px 60px 50px 60px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  iframe {
+    width: 400px;
+    height: 240px;
+  }
+
+  .videoList {
+    margin-top: 40px;
+    margin-left: 0;
+    width: 420px;
+    height: 500px;
+  }
+
+  .pageSelect {
+    float: none;
+    margin: 0;
+    text-align: center;
+  }
+
 }
